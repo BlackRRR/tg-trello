@@ -24,6 +24,7 @@ func NewReader(log *zap.Logger, rdb *redis.Client, repo *sql.DB, bot *tgbotapi.B
 		logger:   log,
 		msg:      newMessagesHandler(message.NewMessageService(rdb, repo, bot, texts)),
 		callback: newCallbackHandler(callback.NewCallbackService(rdb, repo, bot, texts)),
+		texts:    texts,
 	}
 }
 
