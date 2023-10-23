@@ -9,6 +9,22 @@ import (
 
 type Config struct {
 	BotToken string
+	DB       *DB
+	RedisDB  *RedisDB
+}
+
+type RedisDB struct {
+	Host string
+	Port string
+}
+
+type DB struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+	DBName   string
+	SSLMode  string
 }
 
 func LoadConfig() *Config {

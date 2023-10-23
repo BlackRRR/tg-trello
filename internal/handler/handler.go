@@ -8,9 +8,9 @@ import (
 )
 
 type Reader struct {
+	logger   *zap.Logger
 	msg      *MessageHandlers
 	callback *CallBackHandlers
-	logger   *zap.Logger
 }
 
 func NewReader(log *zap.Logger, m *MessageHandlers, c *CallBackHandlers) *Reader {
