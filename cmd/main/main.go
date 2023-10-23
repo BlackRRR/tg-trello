@@ -5,12 +5,10 @@ import (
 	"go.uber.org/zap"
 
 	"tgtrello/config"
+	"tgtrello/internal/assets"
 	"tgtrello/internal/handler"
-	"tgtrello/internal/model"
 	"tgtrello/internal/redis"
 	"tgtrello/internal/repository"
-	"tgtrello/internal/service/callback"
-	"tgtrello/internal/service/message"
 )
 
 func main() {
@@ -28,6 +26,11 @@ func main() {
 		logger.Panic("failed to ping redis client", zap.Error(err))
 	}
 
+	texts, err := assets.LoadTexts()
+	if err != nil {
+		logger.Panic("failed to load texts", zap.Error(err))
+	}
+
 	logger.Info("All Databases connected successful!")
 
 	bot.Debug = true
@@ -38,26 +41,8 @@ func main() {
 	u.Timeout = 60
 
 	updates := bot.GetUpdatesChan(u)
-	r := handler.NewReader(logger, newMessagesHandler(message.NewMessageService(rdbClient, db, bot)), newCallbackHandler(callback.NewCallbackService(rdbClient, db, bot)))
+	r := handler.NewReader(logger, rdbClient, db, bot)
 
 	logger.Info("All services are running!")
 	r.ReadUpdates(updates)
-}
-
-func newMessagesHandler(srv *message.Service) *handler.MessageHandlers {
-	handle := handler.MessageHandlers{
-		Handlers: map[string]model.Handler{},
-	}
-
-	handle.Init(srv)
-	return &handle
-}
-
-func newCallbackHandler(srv *callback.Service) *handler.CallBackHandlers {
-	handle := handler.CallBackHandlers{
-		Handlers: map[string]model.Handler{},
-	}
-
-	handle.Init(srv)
-	return &handle
 }

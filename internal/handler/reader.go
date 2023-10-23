@@ -1,10 +1,15 @@
 package handler
 
 import (
+	"database/sql"
+
+	"github.com/go-redis/redis"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.uber.org/zap"
 
 	"tgtrello/internal/model"
+	"tgtrello/internal/service/callback"
+	"tgtrello/internal/service/message"
 )
 
 type Reader struct {
@@ -13,11 +18,11 @@ type Reader struct {
 	callback *CallBackHandlers
 }
 
-func NewReader(log *zap.Logger, m *MessageHandlers, c *CallBackHandlers) *Reader {
+func NewReader(log *zap.Logger, rdb *redis.Client, repo *sql.DB, bot *tgbotapi.BotAPI) *Reader {
 	return &Reader{
 		logger:   log,
-		msg:      m,
-		callback: c,
+		msg:      newMessagesHandler(message.NewMessageService(rdb, repo, bot)),
+		callback: newCallbackHandler(callback.NewCallbackService(rdb, repo, bot)),
 	}
 }
 
@@ -61,4 +66,22 @@ func setCallbackSituation(callback *tgbotapi.CallbackQuery) *model.Situation {
 		CallbackQuery: callback,
 		User:          &model.User{ID: callback.Message.Chat.ID},
 	}
+}
+
+func newMessagesHandler(srv *message.Service) *MessageHandlers {
+	handle := MessageHandlers{
+		Handlers: map[string]model.Handler{},
+	}
+
+	handle.Init(srv)
+	return &handle
+}
+
+func newCallbackHandler(srv *callback.Service) *CallBackHandlers {
+	handle := CallBackHandlers{
+		Handlers: map[string]model.Handler{},
+	}
+
+	handle.Init(srv)
+	return &handle
 }
