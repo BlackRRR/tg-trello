@@ -12,7 +12,7 @@ import (
 )
 
 func NewDB(logger *zap.Logger, cfg *config.Config) *sql.DB {
-	psqlConn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+	psqlConn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		cfg.DB.Host,
 		cfg.DB.Port,
 		cfg.DB.User,

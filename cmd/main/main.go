@@ -25,23 +25,20 @@ func main() {
 	if err != nil {
 		logger.Panic("failed to ping redis client", zap.Error(err))
 	}
+	repo := repository.NewPgRepository(db)
 
-	texts, err := assets.LoadTexts()
+	texts, err := assets.LoadTexts(cfg.TextsPath)
 	if err != nil {
 		logger.Panic("failed to load texts", zap.Error(err))
 	}
 
 	logger.Info("All Databases connected successful!")
-
-	bot.Debug = true
-
 	logger.Info("Authorized on account", zap.String("account", bot.Self.UserName))
 
 	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
 
 	updates := bot.GetUpdatesChan(u)
-	r := handler.NewReader(logger, rdbClient, db, bot, texts)
+	r := handler.NewReader(logger, rdbClient, repo, bot, texts)
 
 	logger.Info("All services are running!")
 	r.ReadUpdates(updates)

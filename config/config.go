@@ -8,9 +8,10 @@ import (
 )
 
 type Config struct {
-	BotToken string
-	DB       *DB
-	RedisDB  *RedisDB
+	BotToken  string
+	DB        *DB
+	RedisDB   *RedisDB
+	TextsPath string
 }
 
 type RedisDB struct {

@@ -5,9 +5,9 @@ import (
 	"os"
 )
 
-func LoadTexts() (map[string]string, error) {
+func LoadTexts(path string) (map[string]string, error) {
 	texts := make(map[string]string)
-	ru, err := os.ReadFile("ru.json")
+	ru, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
