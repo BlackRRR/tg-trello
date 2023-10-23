@@ -10,16 +10,18 @@ import (
 )
 
 type Service struct {
-	bot  *tgbotapi.BotAPI
-	rdb  *redis.Client
-	repo *sql.DB
+	texts map[string]string
+	bot   *tgbotapi.BotAPI
+	rdb   *redis.Client
+	repo  *sql.DB
 }
 
-func NewCallbackService(rdb *redis.Client, repo *sql.DB, bot *tgbotapi.BotAPI) *Service {
+func NewCallbackService(rdb *redis.Client, repo *sql.DB, bot *tgbotapi.BotAPI, texts map[string]string) *Service {
 	return &Service{
-		rdb:  rdb,
-		repo: repo,
-		bot:  bot,
+		rdb:   rdb,
+		repo:  repo,
+		bot:   bot,
+		texts: texts,
 	}
 }
 

@@ -41,7 +41,7 @@ func main() {
 	u.Timeout = 60
 
 	updates := bot.GetUpdatesChan(u)
-	r := handler.NewReader(logger, rdbClient, db, bot)
+	r := handler.NewReader(logger, rdbClient, db, bot, texts)
 
 	logger.Info("All services are running!")
 	r.ReadUpdates(updates)

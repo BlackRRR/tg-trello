@@ -13,16 +13,17 @@ import (
 )
 
 type Reader struct {
+	texts    map[string]string
 	logger   *zap.Logger
 	msg      *MessageHandlers
 	callback *CallBackHandlers
 }
 
-func NewReader(log *zap.Logger, rdb *redis.Client, repo *sql.DB, bot *tgbotapi.BotAPI) *Reader {
+func NewReader(log *zap.Logger, rdb *redis.Client, repo *sql.DB, bot *tgbotapi.BotAPI, texts map[string]string) *Reader {
 	return &Reader{
 		logger:   log,
-		msg:      newMessagesHandler(message.NewMessageService(rdb, repo, bot)),
-		callback: newCallbackHandler(callback.NewCallbackService(rdb, repo, bot)),
+		msg:      newMessagesHandler(message.NewMessageService(rdb, repo, bot, texts)),
+		callback: newCallbackHandler(callback.NewCallbackService(rdb, repo, bot, texts)),
 	}
 }
 
