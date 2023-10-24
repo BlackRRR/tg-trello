@@ -5,17 +5,17 @@ import (
 	"os"
 )
 
-func LoadTexts(path string) (map[string]string, error) {
-	texts := make(map[string]string)
-	ru, err := os.ReadFile(path)
+func LoadJSON(path string) (map[string]string, error) {
+	val := make(map[string]string)
+	content, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	err = json.Unmarshal(ru, &texts)
+	err = json.Unmarshal(content, &val)
 	if err != nil {
 		return nil, err
 	}
 
-	return texts, nil
+	return val, nil
 }

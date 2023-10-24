@@ -1,0 +1,5 @@
+{
+  "check_tasks": "/check_tasks",
+  "create_task": "/create_task",
+  "team": "/team"
+}

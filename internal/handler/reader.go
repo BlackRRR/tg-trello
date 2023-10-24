@@ -5,11 +5,17 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.uber.org/zap"
 
+	"tgtrello/internal/assets"
 	"tgtrello/internal/model"
 	rdb "tgtrello/internal/redis"
 	"tgtrello/internal/repository"
 	"tgtrello/internal/service/callback"
 	"tgtrello/internal/service/message"
+)
+
+const (
+	commandsPath   = "assets/commands"
+	jsonFormatName = ".json"
 )
 
 type Reader struct {
@@ -64,6 +70,21 @@ func (r *Reader) updateActions(update tgbotapi.Update) {
 			return
 		}
 
+		command, err := r.GetFromCommands(update.Message.Text)
+		if err != nil {
+			return
+		}
+
+		handler = r.msg.GetHandler(command)
+		if handler != nil {
+			err = handler(s)
+			if err != nil {
+				r.logger.Error("failed to get handler", zap.Error(err))
+			}
+
+			return
+		}
+
 		handler = r.msg.GetHandler("/unrecognized")
 
 		return
@@ -78,6 +99,25 @@ func (r *Reader) updateActions(update tgbotapi.Update) {
 			r.logger.Error("failed to get handler", zap.Error(err))
 		}
 	}
+}
+
+func (r *Reader) GetFromCommands(text string) (string, error) {
+	commands, err := assets.LoadJSON(commandsPath + jsonFormatName)
+	if err != nil {
+		return "", err
+	}
+
+	for key, val := range r.texts {
+		if val == text {
+			for k, v := range commands {
+				if key == k {
+					return v, nil
+				}
+			}
+		}
+	}
+
+	return "", nil
 }
 
 func setMessageSituation(message *tgbotapi.Message) *model.Situation {

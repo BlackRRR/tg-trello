@@ -135,7 +135,14 @@ func (m *Service) Start(s *model.Situation) error {
 		return nil
 	}
 
-	return nil
+	markUp := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(utils.GetFormatText(m.texts, "check_tasks")),
+			tgbotapi.NewKeyboardButton(utils.GetFormatText(m.texts, "create_task"))),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(utils.GetFormatText(m.texts, "team"))))
+
+	return m.SendMsgToUserWithMarkUp(s.User.ID, utils.GetFormatText(m.texts, "choose"), markUp)
 }
 
 func (m *Service) SendMsgToUser(userID int64, text string) error {
@@ -144,6 +151,24 @@ func (m *Service) SendMsgToUser(userID int64, text string) error {
 			ChatID: userID,
 		},
 		Text: text,
+	}
+
+	_, err := m.bot.Send(msg)
+	if err != nil {
+		return fmt.Errorf("send msg to user: %w", err)
+	}
+
+	return nil
+}
+
+func (m *Service) SendMsgToUserWithMarkUp(userID int64, text string, markUp tgbotapi.ReplyKeyboardMarkup) error {
+	msg := &tgbotapi.MessageConfig{
+		BaseChat: tgbotapi.BaseChat{
+			ChatID:      userID,
+			ReplyMarkup: markUp,
+		},
+		Text:      text,
+		ParseMode: "HTML",
 	}
 
 	_, err := m.bot.Send(msg)

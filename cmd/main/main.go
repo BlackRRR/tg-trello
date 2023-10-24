@@ -27,7 +27,7 @@ func main() {
 	}
 	repo := repository.NewPgRepository(db)
 
-	texts, err := assets.LoadTexts(cfg.TextsPath)
+	texts, err := assets.LoadJSON(cfg.TextsPath)
 	if err != nil {
 		logger.Panic("failed to load texts", zap.Error(err))
 	}
