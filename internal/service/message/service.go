@@ -213,6 +213,68 @@ func (m *Service) DeadLine(s *model.Situation) error {
 
 	return m.SendMsgToUser(s.User.ID, utils.GetFormatText(m.texts, "send_deadline"))
 }
+
+func (m *Service) CheckTasks(s *model.Situation) error {
+	tasks, err := m.repo.GetTasksInfo(s.User.ID)
+	if err != nil {
+		return err
+	}
+
+	var text string
+	for i, val := range tasks {
+		text += strconv.Itoa(i) + ". " + utils.GetFormatText(m.texts, "task_info_id", val.ID, val.Complexity, val.Deadline.String(), val.Description) + "\n"
+	}
+
+	markUp := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(utils.GetFormatText(m.texts, "delete_task"))))
+
+	return m.SendMsgToUserWithMarkUp(s.User.ID, text, markUp)
+}
+
+func (m *Service) DeleteTask(s *model.Situation) error {
+	rdb.SetPath(m.logger, m.rdb, s.User.ID, "/task_deleted")
+	return m.SendMsgToUser(s.User.ID, utils.GetFormatText(m.texts, "task_id"))
+}
+
+func (m *Service) TaskDeleted(s *model.Situation) error {
+	taskID, err := strconv.Atoi(s.Message.Text)
+	if err != nil {
+		return err
+	}
+	err = m.repo.DeleteTask(taskID)
+	if err != nil {
+		return err
+	}
+
+	return m.SendMsgToUser(s.User.ID, utils.GetFormatText(m.texts, "task_deleted"))
+}
+
+func (m *Service) TaskCreated(s *model.Situation) error {
+	userID := rdb.GetTaskUserID(m.logger, m.rdb, s.User.ID)
+	id, err := strconv.ParseInt(userID, 10, 64)
+	if err != nil {
+		return err
+	}
+
+	err = m.repo.UpdateTaskDescription(id, s.Message.Text)
+	if err != nil {
+		return err
+	}
+
+	task, err := m.repo.GetTaskInfo(id)
+	if err != nil {
+		return err
+	}
+
+	err = m.SendMsgToUser(id, utils.GetFormatText(m.texts, "task_info_to_user", task.Complexity, task.Deadline.String(), task.Description))
+	if err != nil {
+		return err
+	}
+
+	return m.SendMsgToUser(s.User.ID, utils.GetFormatText(m.texts, "task_info", task.Complexity, task.Deadline.String(), task.Description))
+}
+
 func (m *Service) Description(s *model.Situation) error {
 	userID := rdb.GetTaskUserID(m.logger, m.rdb, s.User.ID)
 	id, err := strconv.ParseInt(userID, 10, 64)
@@ -234,9 +296,9 @@ func (m *Service) Description(s *model.Situation) error {
 		return err
 	}
 
-	rdb.SetPath(m.logger, m.rdb, s.User.ID, "/description")
+	rdb.SetPath(m.logger, m.rdb, s.User.ID, "/task_created")
 
-	return m.SendMsgToUser(s.User.ID, utils.GetFormatText(m.texts, "send_deadline"))
+	return m.SendMsgToUser(s.User.ID, utils.GetFormatText(m.texts, "send_description"))
 }
 
 func (m *Service) Complexity(s *model.Situation) error {

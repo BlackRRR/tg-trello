@@ -80,6 +80,63 @@ func (r *PGRepository) UpdateTaskDeadline(userID int64, deadline time.Time) erro
 	return nil
 }
 
+func (r *PGRepository) GetTaskInfo(userID int64) (*model.Tasks, error) {
+	task := &model.Tasks{}
+	err := r.db.QueryRow(`SELECT complexity, deadline, description FROM trello.task WHERE user_id = $1`, userID).Scan(
+		&task.Complexity,
+		&task.Deadline,
+		&task.Description)
+	if err != nil {
+		return nil, err
+	}
+
+	return task, nil
+}
+
+func (r *PGRepository) DeleteTask(taskID int) error {
+	_, err := r.db.Exec(`DELETE FROM trello.task WHERE id = $1`, taskID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *PGRepository) GetTasksInfo(userID int64) ([]*model.Tasks, error) {
+	rows, err := r.db.Query(`SELECT id, complexity, deadline, description FROM trello.task WHERE user_id = $1`, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return TaskRows(rows)
+}
+
+func TaskRows(rows *sql.Rows) ([]*model.Tasks, error) {
+	var tasks []*model.Tasks
+	for rows.Next() {
+		task := &model.Tasks{}
+		err := rows.Scan(&task.ID,
+			&task.Complexity,
+			&task.Deadline,
+			&task.Description)
+		if err != nil {
+			return nil, err
+		}
+
+		tasks = append(tasks, task)
+	}
+
+	return tasks, nil
+}
+
+func (r *PGRepository) UpdateTaskDescription(userID int64, description string) error {
+	_, err := r.db.Exec(`UPDATE trello.task SET description = $1 WHERE user_id = $2`, description, userID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *PGRepository) CheckTeam(id int64) (int, error) {
 	var teamId int
 	err := r.db.QueryRow(`SELECT team_id FROM trello.user_team WHERE user_id = $1;`, id).Scan(&teamId)
@@ -105,7 +162,7 @@ func (r *PGRepository) YourTeam(teamID int) (*model.Team, error) {
 		return nil, err
 	}
 
-	users, err := Rows(row)
+	users, err := UserRows(row)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +184,7 @@ func (r *PGRepository) DeleteUserFromTeam(userID int64) error {
 	return nil
 }
 
-func Rows(rows *sql.Rows) ([]*model.User, error) {
+func UserRows(rows *sql.Rows) ([]*model.User, error) {
 	var users []*model.User
 	for rows.Next() {
 		user := &model.User{}

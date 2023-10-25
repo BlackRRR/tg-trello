@@ -6,5 +6,6 @@
   "your_team": "/your_team",
   "add_user": "/add_user",
   "delete_user": "/delete_user",
-  "exit_team": "/exit_team"
+  "exit_team": "/exit_team",
+  "delete_task": "/delete_task"
 }

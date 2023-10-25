@@ -31,6 +31,11 @@ func (h *MessageHandlers) Init(ms *message.Service) {
 	h.OnCommand("/create_task", ms.CreateTask)
 	h.OnCommand("/complexity", ms.Complexity)
 	h.OnCommand("/deadline", ms.DeadLine)
+	h.OnCommand("/description", ms.Description)
+	h.OnCommand("/task_created", ms.TaskCreated)
+	h.OnCommand("/check_tasks", ms.CheckTasks)
+	h.OnCommand("/task_delete", ms.DeleteTask)
+	h.OnCommand("/task_deleted", ms.TaskDeleted)
 }
 
 func (h *MessageHandlers) OnCommand(command string, handler model.Handler) {
