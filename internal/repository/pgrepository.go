@@ -105,6 +105,9 @@ func (r *PGRepository) DeleteTask(taskID int) error {
 func (r *PGRepository) GetTasksInfo(userID int64) ([]*model.Tasks, error) {
 	rows, err := r.db.Query(`SELECT id, complexity, deadline, description FROM trello.task WHERE user_id = $1`, userID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
 		return nil, err
 	}
 

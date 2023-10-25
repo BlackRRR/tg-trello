@@ -215,9 +215,15 @@ func (m *Service) DeadLine(s *model.Situation) error {
 }
 
 func (m *Service) CheckTasks(s *model.Situation) error {
+	rdb.SetPath(m.logger, m.rdb, s.User.ID, "check_tasks")
+
 	tasks, err := m.repo.GetTasksInfo(s.User.ID)
 	if err != nil {
 		return err
+	}
+
+	if tasks == nil {
+		return m.SendMsgToUser(s.User.ID, utils.GetFormatText(m.texts, "no_tasks_found"))
 	}
 
 	var text string
@@ -251,6 +257,7 @@ func (m *Service) TaskDeleted(s *model.Situation) error {
 }
 
 func (m *Service) TaskCreated(s *model.Situation) error {
+	rdb.SetPath(m.logger, m.rdb, s.User.ID, "task_created")
 	userID := rdb.GetTaskUserID(m.logger, m.rdb, s.User.ID)
 	id, err := strconv.ParseInt(userID, 10, 64)
 	if err != nil {
@@ -340,7 +347,7 @@ func (m *Service) CreateTask(s *model.Situation) error {
 	var text string
 	for i, user := range team.Users {
 		uID := strconv.FormatInt(user.ID, 10)
-		text = strconv.Itoa(i) + ". " + user.Login + "\n" + uID + "\n"
+		text += strconv.Itoa(i) + ". " + user.Login + "\n" + uID + "\n"
 	}
 
 	rdb.SetPath(m.logger, m.rdb, s.User.ID, "/complexity")
@@ -431,7 +438,7 @@ func (m *Service) YourTeam(s *model.Situation) error {
 
 	var text string
 	for i, user := range team.Users {
-		text = strconv.Itoa(i) + ". " + user.Login + "\n"
+		text += strconv.Itoa(i) + ". " + user.Login + "\n"
 	}
 
 	markUp := tgbotapi.NewReplyKeyboard(
