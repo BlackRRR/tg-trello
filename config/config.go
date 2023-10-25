@@ -8,6 +8,7 @@ import (
 )
 
 type Config struct {
+	BotLink   string
 	BotToken  string
 	DB        *DB
 	RedisDB   *RedisDB
@@ -28,6 +29,8 @@ type DB struct {
 	SSLMode  string
 }
 
+var C *Config
+
 func LoadConfig() *Config {
 	viper.SetConfigName("config")
 	viper.SetConfigType("json")
@@ -47,6 +50,8 @@ func LoadConfig() *Config {
 	if err != nil {
 		log.Fatalf("failed marshal config: %v", err)
 	}
+
+	C = &c
 
 	return &c
 }

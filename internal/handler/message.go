@@ -19,6 +19,12 @@ func (h *MessageHandlers) Init(ms *message.Service) {
 	h.OnCommand("/login", ms.Login)
 	h.OnCommand("/password", ms.Password)
 	h.OnCommand("/unrecognized", ms.Password)
+	h.OnCommand("/team", ms.Team)
+	h.OnCommand("/create_team", ms.CreateTeam)
+	h.OnCommand("/team_created", ms.TeamCreated)
+	h.OnCommand("/your_team", ms.YourTeam)
+	h.OnCommand("/add_user", ms.AddUser)
+	h.OnCommand("/add_user_team", ms.AddUserTeam)
 }
 
 func (h *MessageHandlers) OnCommand(command string, handler model.Handler) {

@@ -10,4 +10,5 @@ type Situation struct {
 	Message       *tgbotapi.Message       `json:"message,omitempty"`
 	CallbackQuery *tgbotapi.CallbackQuery `json:"callback_query,omitempty"`
 	User          *User                   `json:"user,omitempty"`
+	TeamID        int
 }

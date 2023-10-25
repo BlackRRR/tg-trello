@@ -1,0 +1,17 @@
+{
+  "BotLink": "https://t.me/trello_tg_bot",
+  "BotToken": "6667378246:AAGDyVm31BmTzERAmfAJadW5yvE37FaDN6U",
+  "DB": {
+    "Host": "localhost",
+    "Port": "9543",
+    "User": "admin",
+    "Password": "1254321",
+    "DBName": "trello_db",
+    "SSLMode": "disable"
+  },
+  "RedisDB": {
+    "Host": "localhost",
+    "Port": "6379"
+  },
+  "TextsPath": "internal/assets/ru.json"
+}

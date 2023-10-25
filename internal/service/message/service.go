@@ -2,12 +2,14 @@ package message
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/go-redis/redis"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.uber.org/zap"
 
+	"tgtrello/config"
 	"tgtrello/internal/model"
 	"tgtrello/internal/pkg/crypto"
 	"tgtrello/internal/pkg/utils"
@@ -121,6 +123,7 @@ func (m *Service) Unrecognized(s *model.Situation) error {
 }
 
 func (m *Service) Start(s *model.Situation) error {
+	rdb.SetPath(m.logger, m.rdb, s.User.ID, "main")
 	userLogin, err := m.repo.CheckUserRegister(s.User.ID)
 	if err != nil {
 		return fmt.Errorf("check user: %w", err)
@@ -141,6 +144,104 @@ func (m *Service) Start(s *model.Situation) error {
 			tgbotapi.NewKeyboardButton(utils.GetFormatText(m.texts, "create_task"))),
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(utils.GetFormatText(m.texts, "team"))))
+
+	return m.SendMsgToUserWithMarkUp(s.User.ID, utils.GetFormatText(m.texts, "choose"), markUp)
+}
+
+func (m *Service) CreateTeam(s *model.Situation) error {
+	teamId, err := m.repo.CheckTeam(s.User.ID)
+	if err != nil {
+		return err
+	}
+
+	if teamId != 0 {
+		err = m.SendMsgToUser(s.User.ID, utils.GetFormatText(m.texts, "team_exists"))
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	rdb.SetPath(m.logger, m.rdb, s.User.ID, "/team_created")
+	err = m.SendMsgToUser(s.User.ID, utils.GetFormatText(m.texts, "team_name"))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Service) TeamCreated(s *model.Situation) error {
+	rdb.SetPath(m.logger, m.rdb, s.User.ID, "created")
+	err := m.repo.CreateTeam(s.User.ID, s.Message.Text)
+	if err != nil {
+		return err
+	}
+
+	return m.SendMsgToUser(s.User.ID, utils.GetFormatText(m.texts, "team_created_successfully"))
+}
+
+func (m *Service) AddUserTeam(s *model.Situation) error {
+	teamName, err := m.repo.AddUserToTeam(s.TeamID, s.User.ID)
+	if err != nil {
+		return err
+	}
+
+	return m.SendMsgToUser(s.User.ID, utils.GetFormatText(m.texts, "you_added_to_team", teamName))
+}
+
+func (m *Service) AddUser(s *model.Situation) error {
+	teamId, err := m.repo.CheckTeam(s.User.ID)
+	if err != nil {
+		return err
+	}
+
+	link := config.C.BotLink + "?start=new_team_user_" + strconv.Itoa(teamId)
+
+	return m.SendMsgToUser(s.User.ID, utils.GetFormatText(m.texts, "send_link", link))
+}
+
+func (m *Service) YourTeam(s *model.Situation) error {
+	rdb.SetPath(m.logger, m.rdb, s.User.ID, "your_team")
+	teamId, err := m.repo.CheckTeam(s.User.ID)
+	if err != nil {
+		return err
+	}
+
+	if teamId == 0 {
+		err = m.SendMsgToUser(s.User.ID, utils.GetFormatText(m.texts, "team_need_create"))
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	team, err := m.repo.YourTeam(teamId)
+	if err != nil {
+		return err
+	}
+
+	var text string
+	for i, user := range team.Users {
+		text = strconv.Itoa(i) + ". " + user.Login + "\n"
+	}
+
+	markUp := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(utils.GetFormatText(m.texts, "add_user")),
+			tgbotapi.NewKeyboardButton(utils.GetFormatText(m.texts, "delete_user"))),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(utils.GetFormatText(m.texts, "exit_team"))))
+	return m.SendMsgToUserWithMarkUp(s.User.ID, utils.GetFormatText(m.texts, "team_info", team.Name, text), markUp)
+}
+
+func (m *Service) Team(s *model.Situation) error {
+	markUp := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(utils.GetFormatText(m.texts, "create_team")),
+			tgbotapi.NewKeyboardButton(utils.GetFormatText(m.texts, "your_team"))))
 
 	return m.SendMsgToUserWithMarkUp(s.User.ID, utils.GetFormatText(m.texts, "choose"), markUp)
 }
