@@ -25,6 +25,12 @@ func (h *MessageHandlers) Init(ms *message.Service) {
 	h.OnCommand("/your_team", ms.YourTeam)
 	h.OnCommand("/add_user", ms.AddUser)
 	h.OnCommand("/add_user_team", ms.AddUserTeam)
+	h.OnCommand("/delete_user", ms.DeleteUser)
+	h.OnCommand("/user_deleted", ms.DeletedUser)
+	h.OnCommand("/exit_team", ms.ExitTeam)
+	h.OnCommand("/create_task", ms.CreateTask)
+	h.OnCommand("/complexity", ms.Complexity)
+	h.OnCommand("/deadline", ms.DeadLine)
 }
 
 func (h *MessageHandlers) OnCommand(command string, handler model.Handler) {

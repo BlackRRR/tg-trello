@@ -115,7 +115,7 @@ func (r *Reader) updateActions(update tgbotapi.Update) {
 	if update.CallbackQuery != nil {
 		s := setCallbackSituation(update.CallbackQuery)
 
-		handler := r.callback.GetHandler(update.Message.Text)
+		handler := r.callback.GetHandler(update.CallbackQuery.Data)
 		err := handler(s)
 		if err != nil {
 			r.logger.Error("failed to get handler", zap.Error(err))

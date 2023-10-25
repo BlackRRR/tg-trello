@@ -18,6 +18,33 @@ func SetPath(logger *zap.Logger, rdb *redis.Client, userID int64, val string) {
 	}
 }
 
+func SetTaskUserID(logger *zap.Logger, rdb *redis.Client, userID int64, toUserID int64) {
+	id := strconv.FormatInt(userID, 10)
+	tId := strconv.FormatInt(toUserID, 10)
+	res := rdb.Set("task_"+id, tId, 7*24*time.Hour)
+	if res.Err() != nil {
+		logger.Error("set path", zap.Error(res.Err()))
+	}
+}
+
+func GetTaskUserID(logger *zap.Logger, rdb *redis.Client, userID int64) string {
+	id := strconv.FormatInt(userID, 10)
+	have, err := rdb.Exists("task_" + id).Result()
+	if err != nil {
+		logger.Error("path exists", zap.Error(err))
+	}
+	if have == 0 {
+		return EmptyLogin
+	}
+
+	value, err := rdb.Get("task_" + id).Result()
+	if err != nil {
+		logger.Error("get path", zap.Error(err))
+	}
+
+	return value
+}
+
 func GetPath(logger *zap.Logger, rdb *redis.Client, userID int64) string {
 	id := strconv.FormatInt(userID, 10)
 	have, err := rdb.Exists(id).Result()

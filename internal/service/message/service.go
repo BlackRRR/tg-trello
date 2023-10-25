@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-redis/redis"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -191,6 +192,149 @@ func (m *Service) AddUserTeam(s *model.Situation) error {
 	return m.SendMsgToUser(s.User.ID, utils.GetFormatText(m.texts, "you_added_to_team", teamName))
 }
 
+func (m *Service) DeadLine(s *model.Situation) error {
+	userID := rdb.GetTaskUserID(m.logger, m.rdb, s.User.ID)
+	id, err := strconv.ParseInt(userID, 10, 64)
+	if err != nil {
+		return err
+	}
+
+	complexity, err := strconv.Atoi(s.Message.Text)
+	if err != nil {
+		return err
+	}
+
+	err = m.repo.UpdateTaskComplexity(id, complexity)
+	if err != nil {
+		return err
+	}
+
+	rdb.SetPath(m.logger, m.rdb, s.User.ID, "/description")
+
+	return m.SendMsgToUser(s.User.ID, utils.GetFormatText(m.texts, "send_deadline"))
+}
+func (m *Service) Description(s *model.Situation) error {
+	userID := rdb.GetTaskUserID(m.logger, m.rdb, s.User.ID)
+	id, err := strconv.ParseInt(userID, 10, 64)
+	if err != nil {
+		return err
+	}
+
+	timer := strings.ReplaceAll(s.Message.Text, "h", "")
+	deadline, err := strconv.Atoi(timer)
+	if err != nil {
+		return err
+	}
+	dur := time.Duration(int64(deadline)) * time.Hour
+
+	addDeadline := time.Now().Add(dur)
+
+	err = m.repo.UpdateTaskDeadline(id, addDeadline)
+	if err != nil {
+		return err
+	}
+
+	rdb.SetPath(m.logger, m.rdb, s.User.ID, "/description")
+
+	return m.SendMsgToUser(s.User.ID, utils.GetFormatText(m.texts, "send_deadline"))
+}
+
+func (m *Service) Complexity(s *model.Situation) error {
+	userID, err := strconv.ParseInt(s.Message.Text, 10, 64)
+	if err != nil {
+		return err
+	}
+	err = m.repo.AddUserToTaskBar(userID)
+	if err != nil {
+		return err
+	}
+
+	rdb.SetPath(m.logger, m.rdb, s.User.ID, "/deadline")
+	rdb.SetTaskUserID(m.logger, m.rdb, s.User.ID, userID)
+
+	return m.SendMsgToUser(s.User.ID, utils.GetFormatText(m.texts, "complexity"))
+}
+
+func (m *Service) CreateTask(s *model.Situation) error {
+	teamId, err := m.repo.CheckTeam(s.User.ID)
+	if err != nil {
+		return err
+	}
+
+	if teamId == 0 {
+		err = m.SendMsgToUser(s.User.ID, utils.GetFormatText(m.texts, "team_need_create"))
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	team, err := m.repo.YourTeam(teamId)
+	if err != nil {
+		return err
+	}
+
+	var text string
+	for i, user := range team.Users {
+		uID := strconv.FormatInt(user.ID, 10)
+		text = strconv.Itoa(i) + ". " + user.Login + "\n" + uID + "\n"
+	}
+
+	rdb.SetPath(m.logger, m.rdb, s.User.ID, "/complexity")
+
+	return m.SendMsgToUser(s.User.ID, utils.GetFormatText(m.texts, "choose_user_to_add_task", text))
+}
+
+func (m *Service) DeleteUser(s *model.Situation) error {
+	teamId, err := m.repo.CheckTeam(s.User.ID)
+	if err != nil {
+		return err
+	}
+
+	if teamId == 0 {
+		err = m.SendMsgToUser(s.User.ID, utils.GetFormatText(m.texts, "team_need_create"))
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	team, err := m.repo.YourTeam(teamId)
+	if err != nil {
+		return err
+	}
+
+	var text string
+	for i, user := range team.Users {
+		uID := strconv.FormatInt(user.ID, 10)
+		text = strconv.Itoa(i) + ". " + user.Login + "\n" + uID + "\n"
+	}
+
+	return m.SendMsgToUser(s.User.ID, utils.GetFormatText(m.texts, "delete_user_text", text))
+}
+func (m *Service) ExitTeam(s *model.Situation) error {
+	markUp := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(utils.GetFormatText(m.texts, "yes"), "/yes"),
+			tgbotapi.NewInlineKeyboardButtonData(utils.GetFormatText(m.texts, "no"), "/no")))
+	return m.SendMsgToUserWithMarkUp(s.User.ID, utils.GetFormatText(m.texts, "you_sure"), markUp)
+}
+
+func (m *Service) DeletedUser(s *model.Situation) error {
+	id, err := strconv.ParseInt(s.Message.Text, 10, 64)
+	if err != nil {
+		return err
+	}
+	err = m.repo.DeleteUserFromTeam(id)
+	if err != nil {
+		return err
+	}
+
+	return m.SendMsgToUser(s.User.ID, utils.GetFormatText(m.texts, "user_deleted"))
+}
+
 func (m *Service) AddUser(s *model.Situation) error {
 	teamId, err := m.repo.CheckTeam(s.User.ID)
 	if err != nil {
@@ -262,7 +406,7 @@ func (m *Service) SendMsgToUser(userID int64, text string) error {
 	return nil
 }
 
-func (m *Service) SendMsgToUserWithMarkUp(userID int64, text string, markUp tgbotapi.ReplyKeyboardMarkup) error {
+func (m *Service) SendMsgToUserWithMarkUp(userID int64, text string, markUp interface{}) error {
 	msg := &tgbotapi.MessageConfig{
 		BaseChat: tgbotapi.BaseChat{
 			ChatID:      userID,

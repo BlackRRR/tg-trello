@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"tgtrello/internal/model"
 )
@@ -54,6 +55,31 @@ func (r *PGRepository) AddNewUser(user *model.User) error {
 	return nil
 }
 
+func (r *PGRepository) AddUserToTaskBar(userID int64) error {
+	_, err := r.db.Exec(`INSERT INTO trello.task (user_id) VALUES ($1)`, userID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *PGRepository) UpdateTaskComplexity(userID int64, complexity int) error {
+	_, err := r.db.Exec(`UPDATE trello.task SET complexity = $1 WHERE user_id = $2`, complexity, userID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *PGRepository) UpdateTaskDeadline(userID int64, deadline time.Time) error {
+	_, err := r.db.Exec(`UPDATE trello.task SET deadline = $1 WHERE user_id = $2`, deadline, userID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *PGRepository) CheckTeam(id int64) (int, error) {
 	var teamId int
 	err := r.db.QueryRow(`SELECT team_id FROM trello.user_team WHERE user_id = $1;`, id).Scan(&teamId)
@@ -87,6 +113,18 @@ func (r *PGRepository) YourTeam(teamID int) (*model.Team, error) {
 	team.Users = users
 
 	return team, nil
+}
+
+func (r *PGRepository) DeleteUserFromTeam(userID int64) error {
+	_, err := r.db.Exec(
+		`DELETE FROM trello.user_team WHERE user_id = $1`,
+		userID,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func Rows(rows *sql.Rows) ([]*model.User, error) {

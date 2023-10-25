@@ -1,11 +1,14 @@
 package callback
 
 import (
+	"fmt"
+
 	"github.com/go-redis/redis"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.uber.org/zap"
 
 	"tgtrello/internal/model"
+	"tgtrello/internal/pkg/utils"
 	"tgtrello/internal/repository"
 )
 
@@ -27,6 +30,31 @@ func NewCallbackService(log *zap.Logger, rdb *redis.Client, repo *repository.PGR
 	}
 }
 
-func (c *Service) Start(s *model.Situation) error {
+func (c *Service) Yes(s *model.Situation) error {
+	err := c.repo.DeleteUserFromTeam(s.User.ID)
+	if err != nil {
+		return err
+	}
+
+	return c.SendMsgToUser(s.User.ID, utils.GetFormatText(c.texts, "you_deleted"))
+}
+
+func (c *Service) No(s *model.Situation) error {
+	return c.SendMsgToUser(s.User.ID, utils.GetFormatText(c.texts, "choose"))
+}
+
+func (c *Service) SendMsgToUser(userID int64, text string) error {
+	msg := &tgbotapi.MessageConfig{
+		BaseChat: tgbotapi.BaseChat{
+			ChatID: userID,
+		},
+		Text: text,
+	}
+
+	_, err := c.bot.Send(msg)
+	if err != nil {
+		return fmt.Errorf("send msg to user: %w", err)
+	}
+
 	return nil
 }

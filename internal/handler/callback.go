@@ -14,7 +14,8 @@ func (h *CallBackHandlers) GetHandler(command string) model.Handler {
 }
 
 func (h *CallBackHandlers) Init(cs *callback.Service) {
-	h.OnCommand("/start", cs.Start)
+	h.OnCommand("/yes", cs.Yes)
+	h.OnCommand("/no", cs.No)
 	// Start commands
 }
 
